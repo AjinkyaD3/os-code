@@ -1,13 +1,14 @@
+// include headers
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
-    printf("[NEW PROGRAM] Child (PID: %d) is now running './child'.\n", getpid());
-    printf("[NEW PROGRAM] Displaying integers in reverse order: ");
-    for (int i = argc - 1; i >= 1; i--)
-        printf("%d ", atoi(argv[i]));
-    printf("\n");
-    return 0;
+    printf("[child-program] pid=%d running, got %d args\n", getpid(), argc - 1); // info
+    printf("reverse: "); // label
+    for (int i = argc - 1; i >= 1; i--) // loop from last to first arg
+        printf("%d ", atoi(argv[i])); // print as int
+    printf("\n"); // newline
+    return 0; // exit ok
 }
 

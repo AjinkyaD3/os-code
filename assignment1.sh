@@ -3,6 +3,7 @@
 fileName="addressbook.txt"
 opt=0
 
+# This function is good and simple, so it stays.
 addRecord() {
     echo -n "Enter Name: "
     read name
@@ -13,82 +14,55 @@ addRecord() {
     echo -e "$name\t$number\t\t$address" >> "$fileName"
 }
 
-while [ "$opt" -ne 6 ]; do
-    echo -e "\n--- Address Book Menu ---"
-    echo "1. Create a New Address Book"
-    echo "2. View Records"
-    echo "3. Insert New Record"
-    echo "4. Delete a Record"
-    echo "5. Modify a Record"
-    echo "6. Exit"
+# Loop until the user picks option 5 (Exit)
+while [ "$opt" -ne 5 ]; do
+    echo -e "\n--- Simple Address Book ---"
+    echo "1. Create New Book (Erases old one!)"
+    echo "2. View Book"
+    echo "3. Add Record"
+    echo "4. Delete Record"
+    echo "5. Exit"
     echo -n "Enter your choice: "
     read opt
 
     case $opt in
-        1)
-            echo -n "Enter new filename (or press Enter for $fileName): "
-            read newFile
-            [ -n "$newFile" ] && fileName="$newFile"
-            [ -e "$fileName" ] && rm "$fileName" && echo "Removed existing file."
-            echo -e "NAME\tNUMBER\t\tADDRESS" >> "$fileName"
-            echo "New address book '$fileName' created with headers."
-            cont=1
-            while [ "$cont" -gt 0 ]; do
-                addRecord
-                echo -n "Enter 0 to Stop, 1 to Enter next: "
-                read cont
-            done
+        1) # Create / Overwrite
+            echo -e "NAME\tNUMBER\t\tADDRESS" > "$fileName"
+            echo "New book '$fileName' created. Now add one record:"
+            addRecord
             ;;
-        2)
-            if [ -e "$fileName" ]; then
-                echo -e "\n--- Address Book: $fileName ---"
+        2) # View
+            if [ ! -e "$fileName" ]; then
+                echo "File not found. Use Option 1."
+            else
                 cat "$fileName"
-            else
-                echo "File not found! Please create an address book first (Option 1)."
             fi
             ;;
-        3)
+        3) # Add
             if [ ! -e "$fileName" ]; then
-                echo "File not found! Please create an address book first (Option 1)."
+                echo "File not found. Use Option 1."
             else
                 addRecord
-                echo "Record inserted successfully!"
             fi
             ;;
-        4)
+        4) # Delete
             if [ ! -e "$fileName" ]; then
-                echo "File not found! Please create an address book first (Option 1)."
+                echo "File not found. Use Option 1."
             else
-                echo -n "Enter Name or Phone Number to delete: "
+                echo -n "Enter Name or Number to delete: "
                 read pattern
-                grep -v "$pattern" "$fileName" > temp && mv temp "$fileName"
-                echo "Record deleted (if found)."
+                # This is the "magic." It's one command, no temp file.
+                # sed -i means "edit the file in-place."
+                # "/$pattern/d" means "find the line with this pattern and delete it."
+                sed -i "/$pattern/d" "$fileName"
+                echo "Record deleted (if it existed)."
             fi
             ;;
-        5)
-            if [ ! -e "$fileName" ]; then
-                echo "File not found! Please create an address book first (Option 1)."
-            else
-                echo -n "Enter Name or Phone Number of record to modify: "
-                read pattern
-                if grep -q "$pattern" "$fileName"; then
-                    grep -v "$pattern" "$fileName" > temp && mv temp "$fileName"
-                    echo "Record found. Enter new details:"
-                    echo -n "Enter New Name: "
-                    read name
-                    echo -n "Enter New Phone Number of $name: "
-                    read number
-                    echo -n "Enter New Address of $name: "
-                    read address
-                    echo -e "$name\t$number\t\t$address" >> "$fileName"
-                    echo "Record modified successfully!"
-                else
-                    echo "Record not found."
-                fi
-            fi
+        5) # Exit
+            echo "Exiting."
             ;;
-        6) echo "Exiting program..." ;;
-        *) echo "Invalid option! Please try again." ;;
+        *) # Default
+            echo "Invalid choice. Try again."
+            ;;
     esac
 done
-
