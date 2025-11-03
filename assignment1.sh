@@ -1,68 +1,56 @@
-#!/bin/bash
+#!/bin/bash # use bash shell
 
-fileName="addressbook.txt"
-opt=0
+fileName="addressbook.txt" # data file name
+opt=0 # menu option variable
 
-# This function is good and simple, so it stays.
-addRecord() {
-    echo -n "Enter Name: "
-    read name
-    echo -n "Enter Phone Number of $name: "
-    read number
-    echo -n "Enter Address of $name: "
-    read address
-    echo -e "$name\t$number\t\t$address" >> "$fileName"
+# show quick demo of basic linux commands (Part A)
+demoCommands() {
+    echo "[echo] Hello" # print text
+    echo "[ls]"; ls # list files
+    echo -n "[read] Enter a word: "; read w; echo "you typed: $w" # read user input
+    echo "[touch] making demo.txt"; touch demo.txt # create empty file
+    echo "demo" > demo.txt # write into file
+    echo "[cat] show file"; cat demo.txt # print file
+    if [ -f demo.txt ]; then echo "[test] demo.txt exists"; fi # test file exists
+    for i in 1 2 3; do echo "[loop] i=$i"; done # simple loop
+    a=5; b=3; if [ $a -gt $b ]; then echo "[arith] $a > $b"; fi # comparison
+    echo -e "red\nblue\nred" > colors.txt # make sample lines
+    echo "[grep] lines with red:"; grep red colors.txt # grep match
+    echo "[sed] replace red->green:"; sed 's/red/green/g' colors.txt # sed replace
 }
 
-# Loop until the user picks option 5 (Exit)
-while [ "$opt" -ne 5 ]; do
-    echo -e "\n--- Simple Address Book ---"
-    echo "1. Create New Book (Erases old one!)"
-    echo "2. View Book"
-    echo "3. Add Record"
-    echo "4. Delete Record"
-    echo "5. Exit"
-    echo -n "Enter your choice: "
-    read opt
+# add one address record (Part B)
+addRecord() {
+    echo -n "Enter Name: " # ask name
+    read name # read name
+    echo -n "Enter Phone Number of $name: " # ask phone
+    read number # read phone
+    echo -n "Enter Address of $name: " # ask address
+    read address # read address
+    echo -e "$name\t$number\t\t$address" >> "$fileName" # append to file
+}
+
+# loop menu until Exit
+while [ "$opt" -ne 6 ]; do
+    echo -e "\n--- Assignment 1 ---" # title
+    echo "0. Demo basic Linux commands" # Part A
+    echo "1. Create New Address Book (erases old)" # create
+    echo "2. View Address Book" # view
+    echo "3. Insert a Record" # insert
+    echo "4. Delete a Record" # delete
+    echo "5. Modify a Record" # modify
+    echo "6. Exit" # exit
+    echo -n "Enter your choice: " # ask choice
+    read opt # read choice
 
     case $opt in
-        1) # Create / Overwrite
-            echo -e "NAME\tNUMBER\t\tADDRESS" > "$fileName"
-            echo "New book '$fileName' created. Now add one record:"
-            addRecord
-            ;;
-        2) # View
-            if [ ! -e "$fileName" ]; then
-                echo "File not found. Use Option 1."
-            else
-                cat "$fileName"
-            fi
-            ;;
-        3) # Add
-            if [ ! -e "$fileName" ]; then
-                echo "File not found. Use Option 1."
-            else
-                addRecord
-            fi
-            ;;
-        4) # Delete
-            if [ ! -e "$fileName" ]; then
-                echo "File not found. Use Option 1."
-            else
-                echo -n "Enter Name or Number to delete: "
-                read pattern
-                # This is the "magic." It's one command, no temp file.
-                # sed -i means "edit the file in-place."
-                # "/$pattern/d" means "find the line with this pattern and delete it."
-                sed -i "/$pattern/d" "$fileName"
-                echo "Record deleted (if it existed)."
-            fi
-            ;;
-        5) # Exit
-            echo "Exiting."
-            ;;
-        *) # Default
-            echo "Invalid choice. Try again."
-            ;;
+        0) demoCommands ;; # run demo
+        1) echo -e "NAME\tNUMBER\t\tADDRESS" > "$fileName"; echo "Created $fileName" ;; # create
+        2) if [ -e "$fileName" ]; then cat "$fileName"; else echo "No file. Use option 1."; fi ;; # view
+        3) if [ -e "$fileName" ]; then addRecord; else echo "No file. Use option 1."; fi ;; # insert
+        4) if [ -e "$fileName" ]; then echo -n "Enter Name/Number to delete: "; read k; sed -i "/$k/d" "$fileName"; echo "Deleted (if matched)."; else echo "No file. Use option 1."; fi ;; # delete
+        5) if [ -e "$fileName" ]; then echo -n "Enter Name/Number to modify: "; read k; sed -i "/$k/d" "$fileName"; echo "Enter new details:"; addRecord; echo "Modified."; else echo "No file. Use option 1."; fi ;; # modify
+        6) echo "Exiting." ;; # exit
+        *) echo "Invalid choice." ;; # default
     esac
 done

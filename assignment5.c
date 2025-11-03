@@ -1,96 +1,65 @@
-#include <stdio.h>
+// assignment5.c
+#include <stdio.h> // io
+#include <stdlib.h> // std
 
-struct process {
-    int max[10], allocate[10], need[10];
-} p[10];
+int main() { // banker
+    int n, m; // n processes, m resources
+    printf("Enter processes (n) and resource types (m): "); // prompt
+    scanf("%d %d", &n, &m); // read
+    if (n <= 0 || m <= 0) return 1; // guard
 
-int n, m;
+    int alloc[n][m], max[n][m], need[n][m]; // matrices
+    int avail[m]; // available
 
-void input(int available[]) {
-    for (int i = 0; i < n; i++) {
-        printf("Enter the details of process P%d:\n  Enter the allocated resources: ", i);
+    printf("Enter Allocation matrix (n x m):\n"); // prompt
+    for (int i = 0; i < n; i++) // rows
+        for (int j = 0; j < m; j++) // cols
+            scanf("%d", &alloc[i][j]); // read
+
+    printf("Enter Max matrix (n x m):\n"); // prompt
+    for (int i = 0; i < n; i++) // rows
+        for (int j = 0; j < m; j++) // cols
+            scanf("%d", &max[i][j]); // read
+
+    printf("Enter Available vector (m): "); // prompt
+    for (int j = 0; j < m; j++) // read m
+        scanf("%d", &avail[j]); // read
+
+    // --- This is the "Magic" ---
+    for (int i = 0; i < n; i++) // compute need
         for (int j = 0; j < m; j++)
-            scanf("%d", &p[i].allocate[j]);
-        printf("  Enter the max resources: ");
-        for (int j = 0; j < m; j++) {
-            scanf("%d", &p[i].max[j]);
-            p[i].need[j] = p[i].max[j] - p[i].allocate[j];
-        }
-    }
-    printf("\nEnter the available resources: ");
-    for (int j = 0; j < m; j++)
-        scanf("%d", &available[j]);
-}
+            need[i][j] = max[i][j] - alloc[i][j]; // need = max - alloc
 
-void display() {
-    printf("\n\tPID\tALLOCATE\tMAX\t\tNEED\n");
-    for (int i = 0; i < n; i++) {
-        printf("\tP%d\t", i);
-        for (int j = 0; j < m; j++) printf("%d ", p[i].allocate[j]);
-        printf("\t\t");
-        for (int j = 0; j < m; j++) printf("%d ", p[i].max[j]);
-        printf("\t\t");
-        for (int j = 0; j < m; j++) printf("%d ", p[i].need[j]);
-        printf("\n");
-    }
-}
+    int finished[n]; // finish flags
+    for (int i = 0; i < n; i++) finished[i] = 0; // init
+    int safeSeq[n], idx = 0; // sequence
 
-int safetyAlgorithm(int available[], int safeSequence[]) {
-    int work[m], finish[n];
-    for (int j = 0; j < m; j++)
-        work[j] = available[j];
-    for (int i = 0; i < n; i++)
-        finish[i] = 0;
-    
-    int count = 0;
-    while (count < n) {
-        int found = 0;
-        for (int i = 0; i < n; i++) {
-            if (finish[i] == 0) {
-                int can_allocate = 1;
-                for (int j = 0; j < m; j++) {
-                    if (p[i].need[j] > work[j]) {
-                        can_allocate = 0;
-                        break;
-                    }
-                }
-                if (can_allocate) {
-                    for (int j = 0; j < m; j++)
-                        work[j] += p[i].allocate[j];
-                    finish[i] = 1;
-                    safeSequence[count++] = i;
-                    found = 1;
-                }
+    int madeProgress = 1; // loop flag
+    while (idx < n && madeProgress) { // try to find order
+        madeProgress = 0; // reset
+        for (int i = 0; i < n; i++) { // try each process
+            if (finished[i]) continue; // skip done
+            int canRun = 1; // assume ok
+            for (int j = 0; j < m; j++) // check need <= avail
+                if (need[i][j] > avail[j]) { canRun = 0; break; } // not ok
+            
+            if (canRun) { // can run now
+                for (int j = 0; j < m; j++) // release resources
+                    avail[j] += alloc[i][j]; // add back
+                safeSeq[idx++] = i; // record
+                finished[i] = 1; // mark
+                madeProgress = 1; // progress
             }
         }
-        if (found == 0) return 0;
     }
-    return 1;
-}
+    // --- End of "Magic" ---
 
-int main() {
-    printf("Enter No of processes: ");
-    scanf("%d", &n);
-    printf("Enter no of resources: ");
-    scanf("%d", &m);
-    
-    int available[m], safeSequence[n];
-    printf("\n***** Enter details of process *****\n");
-    input(available);
-    display();
-    
-    if (safetyAlgorithm(available, safeSequence)) {
-        printf("\n\tSYSTEM IS IN SAFE STATE...\nSafe sequence is: ");
-        for (int i = 0; i < n; i++) {
-            printf("P%d", safeSequence[i]);
-            if (i < n - 1) printf(" -> ");
-        }
-        printf("\n");
-    } else {
-        printf("\nSYSTEM IS IN UNSAFE STATE!!!\n");
+    if (idx == n) { // safe
+        printf("Safe sequence: "); // print
+        for (int i = 0; i < n; i++) printf("P%d ", safeSeq[i]); // P indices
+        printf("\n"); // newline
+    } else { // unsafe
+        printf("No safe sequence (system is in unsafe state)\n"); // info
     }
-    return 0;
+    return 0; // ok
 }
-
-
-
