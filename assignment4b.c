@@ -1,3 +1,8 @@
+/*
+Problem Statement 6:
+Thread synchronization and mutual exclusion using mutex. Application to demonstrate
+Reader-Writer problem with reader priority.
+*/
 #include <stdio.h> // io
 #include <stdlib.h> // std
 #include <pthread.h> // threads

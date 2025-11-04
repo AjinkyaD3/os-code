@@ -1,69 +1,56 @@
-// assignment6.c
+/*
+Problem Statement 6:
+Thread synchronization and mutual exclusion using mutex. Application to demonstrate
+Reader-Writer problem with reader priority.
+*/
 #include <stdio.h> // io
 #include <stdlib.h> // std
+#include <pthread.h> // threads
+#include <unistd.h> // sleep
 
-int fifo(int pages[], int n, int frames) { // FIFO
-    int q[frames], front = 0, faults = 0; // queue
-    for (int i = 0; i < frames; i++) q[i] = -1; // empty
-    for (int i = 0; i < n; i++) { // each ref
-        int hit = 0; // miss by default
-        for (int j = 0; j < frames; j++) if (q[j] == pages[i]) { hit = 1; break; } // check hit
-        if (!hit) { q[front] = pages[i]; front = (front + 1) % frames; faults++; } // replace
+int readCount = 0; // number of active readers
+pthread_mutex_t readCountLock = PTHREAD_MUTEX_INITIALIZER; // protects readCount
+pthread_mutex_t resourceLock = PTHREAD_MUTEX_INITIALIZER; // controls writers/readers
+
+void *reader(void *arg) { // reader thread
+    int id = *(int*)arg; // reader id
+    for (int k = 0; k < 3; k++) { // read a few times
+        pthread_mutex_lock(&readCountLock); // lock readCount
+        readCount++; // one more reader
+        if (readCount == 1) pthread_mutex_lock(&resourceLock); // first reader locks resource
+        pthread_mutex_unlock(&readCountLock); // unlock counter
+
+        printf("reader %d reading\n", id); // simulate read
+        usleep(100000); // delay
+
+        pthread_mutex_lock(&readCountLock); // lock counter
+        readCount--; // leaving
+        if (readCount == 0) pthread_mutex_unlock(&resourceLock); // last reader unlocks resource
+        pthread_mutex_unlock(&readCountLock); // unlock counter
+        usleep(80000); // small gap
     }
-    return faults; // total
+    return NULL; // done
 }
 
-int lru(int pages[], int n, int frames) { // LRU
-    int f[frames], age[frames], faults = 0; // frames and ages
-    for (int i = 0; i < frames; i++) { f[i] = -1; age[i] = 0; } // init
-    for (int i = 0; i < n; i++) { // each ref
-        int p = pages[i], hit = -1; // page and hit idx
-        for (int j = 0; j < frames; j++) if (f[j] == p) { hit = j; break; } // find hit
-        for (int j = 0; j < frames; j++) if (f[j] != -1) age[j]++; // age others
-        if (hit != -1) { age[hit] = 0; } // reset age on hit
-        else { // need replace
-            int pos = -1, oldest = -1; // find max age
-            for (int j = 0; j < frames; j++) if (f[j] == -1) { pos = j; break; } // empty slot
-            if (pos == -1) { for (int j = 0; j < frames; j++) if (age[j] > oldest) { oldest = age[j]; pos = j; } } // evict
-            f[pos] = p; age[pos] = 0; faults++; // place
-        }
+void *writer(void *arg) { // writer thread
+    int id = *(int*)arg; // writer id
+    for (int k = 0; k < 3; k++) { // write a few times
+        pthread_mutex_lock(&resourceLock); // exclusive access
+        printf("writer %d writing\n", id); // simulate write
+        usleep(150000); // delay
+        pthread_mutex_unlock(&resourceLock); // release
+        usleep(120000); // gap
     }
-    return faults; // total
-}
-
-int optimal(int pages[], int n, int frames) { // Optimal
-    int f[frames], faults = 0; // frames
-    for (int i = 0; i < frames; i++) f[i] = -1; // init
-    for (int i = 0; i < n; i++) { // each ref
-        int p = pages[i], hit = 0; // current page
-        for (int j = 0; j < frames; j++) if (f[j] == p) { hit = 1; break; } // check hit
-        if (hit) continue; // no fault
-        int pos = -1; // where to put
-        for (int j = 0; j < frames; j++) if (f[j] == -1) { pos = j; break; } // empty slot
-        if (pos == -1) { // choose farthest future use
-            int farIdx = -1, farDist = -1; // best victim
-            for (int j = 0; j < frames; j++) { // for each frame
-                int d = 999999; // default if never used again
-                for (int k = i + 1; k < n; k++) if (pages[k] == f[j]) { d = k - i; break; } // find next use
-                if (d > farDist) { farDist = d; farIdx = j; } // pick farthest
-            }
-            pos = farIdx; // victim frame
-        }
-        f[pos] = p; faults++; // place
-    }
-    return faults; // total
+    return NULL; // done
 }
 
 int main() { // main
-    int n, frames; // inputs
-    printf("Enter number of pages and frames (>=3): "); // prompt
-    scanf("%d %d", &n, &frames); // read
-    if (frames < 3 || n <= 0) return 1; // guard
-    int pages[n]; // refs
-    printf("Enter reference string (%d integers):\n", n); // prompt
-    for (int i = 0; i < n; i++) scanf("%d", &pages[i]); // read
-    printf("FIFO faults: %d\n", fifo(pages, n, frames)); // run FIFO
-    printf("LRU faults: %d\n", lru(pages, n, frames)); // run LRU
-    printf("Optimal faults: %d\n", optimal(pages, n, frames)); // run Optimal
+    pthread_t r[3], w[2]; // threads
+    int ri[3] = {1,2,3}; // ids
+    int wi[2] = {1,2}; // ids
+    for (int i = 0; i < 3; i++) pthread_create(&r[i], NULL, reader, &ri[i]); // start readers
+    for (int i = 0; i < 2; i++) pthread_create(&w[i], NULL, writer, &wi[i]); // start writers
+    for (int i = 0; i < 3; i++) pthread_join(r[i], NULL); // wait readers
+    for (int i = 0; i < 2; i++) pthread_join(w[i], NULL); // wait writers
     return 0; // ok
 }

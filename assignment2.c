@@ -1,3 +1,9 @@
+/*
+Problem Statement 2:
+Implement the C program in which main program accepts the integers to be sorted.
+Main program uses FORK to create a child process. Parent sorts and waits for child
+using WAIT; child also sorts using any algorithm. Also demonstrate zombie and orphan states.
+*/
 // include standard input/output
 #include <stdio.h>
 // include standard library (for exit)
@@ -45,9 +51,13 @@ int main() {
         return 1; // exit with error
     } else if (pid == 0) { // child process
         printf("[child] pid=%d sorting...\n", getpid()); // child info
+
         bubbleSort(arr, n); // child sorts
+
         printArray(arr, n, "[child] sorted: "); // show child result
+
         printf("[child] done\n"); // child done
+        
         exit(0); // child exit
     } else { // parent process
         printf("[parent] pid=%d sorting its copy...\n", getpid()); // parent info
@@ -81,4 +91,3 @@ int main() {
         return 0; // parent exits, child continues as orphan
     }
 }
-

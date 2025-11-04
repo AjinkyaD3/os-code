@@ -1,3 +1,8 @@
+/*
+Problem Statement 5:
+Thread synchronization using counting semaphores. Application to demonstrate
+producer-consumer problem with counting semaphores and mutex.
+*/
 #include <stdio.h> // io
 #include <stdlib.h> // std
 #include <pthread.h> // threads
