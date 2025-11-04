@@ -3,57 +3,68 @@ Problem Statement 5:
 Thread synchronization using counting semaphores. Application to demonstrate
 producer-consumer problem with counting semaphores and mutex.
 */
-#include <stdio.h> // io
-#include <stdlib.h> // std
-#include <pthread.h> // threads
-#include <semaphore.h> // semaphores
-#include <unistd.h> // sleep
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
 
-#define BUF 5 // buffer size
-#define NITEMS 10 // total items to produce
+#define BUF 5        // Buffer size
+#define NITEMS 10    // Number of items to produce/consume
 
-int buffer[BUF]; // circular buffer
-int in = 0, out = 0; // indices
-sem_t emptySlots, filledSlots; // counting semaphores
-pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; // mutex for buffer
+int buffer[BUF];
+int in = 0, out = 0;
 
-void *producer(void *arg) { // producer thread
-    for (int i = 1; i <= NITEMS; i++) { // produce NITEMS
-        sem_wait(&emptySlots); // wait for empty slot
-        pthread_mutex_lock(&lock); // lock buffer
-        buffer[in] = i; // put item
-        printf("produced %d at %d\n", i, in); // log
-        in = (in + 1) % BUF; // move in
-        pthread_mutex_unlock(&lock); // unlock
-        sem_post(&filledSlots); // signal filled
-        usleep(100000); // small delay
+sem_t emptySlots, filledSlots;
+pthread_mutex_t lock;
+
+void *producer(void *arg) {
+    for(int i = 1; i <= NITEMS; i++) {
+        sem_wait(&emptySlots);            // Wait for empty slot
+        pthread_mutex_lock(&lock);        // Lock buffer
+
+        buffer[in] = i;
+        printf("Producer produced %d at index %d\n", i, in);
+        in = (in + 1) % BUF;
+
+        pthread_mutex_unlock(&lock);      // Unlock buffer
+        sem_post(&filledSlots);           // Signal consumer
+        usleep(100000);
     }
-    return NULL; // done
+    return NULL;
 }
 
-void *consumer(void *arg) { // consumer thread
-    for (int c = 0; c < NITEMS; c++) { // consume NITEMS
-        sem_wait(&filledSlots); // wait filled
-        pthread_mutex_lock(&lock); // lock
-        int x = buffer[out]; // get item
-        printf("consumed %d from %d\n", x, out); // log
-        out = (out + 1) % BUF; // move out
-        pthread_mutex_unlock(&lock); // unlock
-        sem_post(&emptySlots); // signal empty
-        usleep(150000); // small delay
+void *consumer(void *arg) {
+    for(int i = 1; i <= NITEMS; i++) {
+        sem_wait(&filledSlots);           // Wait for available item
+        pthread_mutex_lock(&lock);        // Lock buffer
+
+        int x = buffer[out];
+        printf("Consumer consumed %d from index %d\n", x, out);
+        out = (out + 1) % BUF;
+
+        pthread_mutex_unlock(&lock);      // Unlock buffer
+        sem_post(&emptySlots);            // Signal producer
+        usleep(150000);
     }
-    return NULL; // done
+    return NULL;
 }
 
-int main() { // main
-    pthread_t pt, ct; // thread ids
-    sem_init(&emptySlots, 0, BUF); // start with BUF empty
-    sem_init(&filledSlots, 0, 0); // none filled
-    pthread_create(&pt, NULL, producer, NULL); // start producer
-    pthread_create(&ct, NULL, consumer, NULL); // start consumer
-    pthread_join(pt, NULL); // wait producer
-    pthread_join(ct, NULL); // wait consumer
-    sem_destroy(&emptySlots); // cleanup
-    sem_destroy(&filledSlots); // cleanup
-    return 0; // ok
+int main() {
+    pthread_t prod, cons;
+
+    sem_init(&emptySlots, 0, BUF);
+    sem_init(&filledSlots, 0, 0);
+    pthread_mutex_init(&lock, NULL);
+
+    pthread_create(&prod, NULL, producer, NULL);
+    pthread_create(&cons, NULL, consumer, NULL);
+
+    pthread_join(prod, NULL);
+    pthread_join(cons, NULL);
+
+    sem_destroy(&emptySlots);
+    sem_destroy(&filledSlots);
+    pthread_mutex_destroy(&lock);
+
+    return 0;
 }

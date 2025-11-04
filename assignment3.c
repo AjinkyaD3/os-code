@@ -7,50 +7,56 @@ array in reverse order.
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
+#include <sys/types.h>
 
-extern char **environ; // for execve env
+int main(int argc, char *argv[]) {
+    // Case 2: Child executed via execve → print array reverse
+    if(argc > 1) {
+        printf("Child (after execve) prints array in reverse:\n");
+        for(int i = argc - 1; i > 0; i--)
+            printf("%s ", argv[i]);
+        printf("\n");
+        return 0;
+    }
 
-void bubbleSort(int *a, int n) {
-    for (int i = 0; i < n - 1; i++)
-        for (int j = 0; j < n - i - 1; j++)
-            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }
-}
+    // Case 1: Original parent process
+    int n;
+    printf("Enter size of array: ");
+    scanf("%d", &n);
 
-int run_child_mode(int argc, char **argv) { // argv[1] == "child"
-    printf("[child-program] printing reverse: ");
-    for (int i = argc - 1; i >= 2; i--) printf("%d ", atoi(argv[i]));
-    printf("\n");
-    return 0;
-}
+    int arr[n];
+    printf("Enter elements: ");
+    for(int i = 0; i < n; i++)
+        scanf("%d", &arr[i]);
 
-int main(int argc, char **argv) {
-    if (argc > 1 && strcmp(argv[1], "child") == 0) return run_child_mode(argc, argv);
-
-    int n; printf("Enter count: "); scanf("%d", &n);
-    int arr[n]; printf("Enter %d integers: ", n);
-    for (int i = 0; i < n; i++) scanf("%d", &arr[i]);
-
-    bubbleSort(arr, n); // parent sorts first
+    // Sort the array
+    for(int i = 0; i < n; i++)
+        for(int j = i+1; j < n; j++)
+            if(arr[i] > arr[j]) {
+                int t = arr[i];
+                arr[i] = arr[j];
+                arr[j] = t;
+            }
 
     pid_t pid = fork();
-    if (pid < 0) { perror("fork"); return 1; }
-    else if (pid == 0) {
-        // prepare args: argv[0] same program, argv[1] = "child", then numbers
-        char *args[n + 3];
-        char nums[n][20];
+
+    if(pid == 0) {  // Child
+        // Convert sorted array to string arguments
+        char *args[n+2];
         args[0] = argv[0];
-        args[1] = "child";
-        for (int i = 0; i < n; i++) { sprintf(nums[i], "%d", arr[i]); args[i + 2] = nums[i]; }
-        args[n + 2] = NULL;
-        execve(args[0], args, environ);
-        perror("execve");
-        exit(1);
-                } else {
+        for(int i = 0; i < n; i++) {
+            args[i+1] = malloc(10);
+            sprintf(args[i+1], "%d", arr[i]);
+        }
+        args[n+1] = NULL;
+
+        execve(argv[0], args, NULL);
+        perror("execve failed");
+    }
+    else { // Parent
         wait(NULL);
     }
+
     return 0;
 }
-

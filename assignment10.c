@@ -3,178 +3,91 @@ Problem Statement 10:
 Implement the C program for Disk Scheduling Algorithms: SSTF, SCAN, and C-LOOK
 considering the initial head position moving away from the spindle.
 */
-#include <stdio.h> // std io
-#include <stdlib.h> // std lib
-#include <math.h> // abs
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
-int compare(const void *a, const void *b) { // qsort compare
-    return (*(int*)a - *(int*)b); // ascending
+int compare(const void *a, const void *b) {
+    return (*(int*)a - *(int*)b);
 }
 
-void SSTF() { // shortest seek time first
-    int n, initial, totalMove = 0; // inputs and total
-    printf("\n--- SSTF Disk Scheduling Algorithm ---\nEnter the number of Requests: "); // prompt
-    scanf("%d", &n); // read count
-    
-    int RQ[n], visited[n]; // requests and flags
-    printf("Enter the Requests sequence:\n"); // prompt
-    for (int i = 0; i < n; i++) { // read loop
-        scanf("%d", &RQ[i]); // read
-        visited[i] = 0; // mark not served
-    }
-    
-    printf("Enter initial head position: "); // prompt
-    scanf("%d", &initial); // read init
-    printf("\nSeek Sequence: %d", initial); // start sequence
+void SSTF() {
+    int n, head, total=0;
+    printf("Enter no. of requests: "); scanf("%d",&n);
+    int rq[n], done[n];
+    printf("Enter requests: ");
+    for(int i=0;i<n;i++){ scanf("%d",&rq[i]); done[i]=0; }
+    printf("Enter initial head: "); scanf("%d",&head);
 
-    for (int count = 0; count < n; count++) { // serve all
-        int min = 999999, index = -1; // best choice
-        for (int i = 0; i < n; i++) { // scan
-            if (visited[i] == 0) { // not served
-                int dist = abs(RQ[i] - initial); // distance
-                if (min > dist) { // better
-                    min = dist; // update
-                    index = i; // store index
-                }
+    for(int k=0;k<n;k++){
+        int min=9999, idx=-1;
+        for(int i=0;i<n;i++){
+            if(!done[i] && abs(rq[i]-head)<min){
+                min=abs(rq[i]-head); idx=i;
             }
         }
-        if (index != -1) { // found next
-            totalMove += min; // add move
-            initial = RQ[index]; // move head
-            visited[index] = 1; // mark done
-            printf(" -> %d", initial); // print
-        } else break; // safety
+        total+=min; head=rq[idx]; done[idx]=1;
+        printf("%d ", head);
     }
-    printf("\nTotal head movement is %d\n", totalMove); // total
+    printf("\nTotal Head Movement = %d\n", total);
 }
 
-void SCAN() { // scan algorithm
-    int n, initial, size, move, totalMove = 0; // inputs and total
-    printf("\n--- SCAN Disk Scheduling Algorithm ---\nEnter the number of Requests: "); // prompt
-    scanf("%d", &n); // read count
-    
-    int RQ[n]; // requests
-    printf("Enter the Requests sequence:\n"); // prompt
-    for (int i = 0; i < n; i++) // read loop
-        scanf("%d", &RQ[i]); // read rq
-    
-    printf("Enter initial head position: "); // prompt
-    scanf("%d", &initial); // read
-    printf("Enter total disk size (e.g., 200): "); // prompt
-    scanf("%d", &size); // read size
-    printf("Enter the head movement direction (1 for high, 0 for low): "); // prompt
-    scanf("%d", &move); // read dir
+void SCAN() {
+    int n, head, size, dir, total=0;
+    printf("Enter no. of requests: "); scanf("%d",&n);
+    int rq[n];
+    printf("Enter requests: ");
+    for(int i=0;i<n;i++) scanf("%d",&rq[i]);
+    printf("Enter initial head: "); scanf("%d",&head);
+    printf("Enter disk size: "); scanf("%d",&size);
+    printf("Direction (1=right, 0=left): "); scanf("%d",&dir);
 
-    qsort(RQ, n, sizeof(int), compare); // sort requests
-    
-    int index = 0; // find split
-    for (int i = 0; i < n; i++) {
-        if (initial < RQ[i]) { // first higher
-            index = i; // store index
-            break; // stop
-        }
+    qsort(rq,n,sizeof(int),compare);
+    int i;
+    for(i=0;i<n;i++) if(rq[i]>head) break;
+
+    if(dir){
+        for(int j=i;j<n;j++){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
+        total+=abs((size-1)-head); head=size-1;
+        for(int j=i-1;j>=0;j--){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
+    } else {
+        for(int j=i-1;j>=0;j--){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
+        total+=abs(head-0); head=0;
+        for(int j=i;j<n;j++){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
     }
-    
-    printf("\nSeek Sequence: %d", initial); // start
-    
-    if (move == 1) { // go to high end first
-        for (int i = index; i < n; i++) { // up
-            totalMove += abs(RQ[i] - initial); // add move
-            initial = RQ[i]; // move head
-            printf(" -> %d", initial); // print
-        }
-        totalMove += abs((size - 1) - initial); // to end
-        initial = size - 1; // set to end
-        printf(" -> %d", initial); // print
-        for (int i = index - 1; i >= 0; i--) { // then back
-            totalMove += abs(RQ[i] - initial); // add
-            initial = RQ[i]; // move
-            printf(" -> %d", initial); // print
-        }
-    } else { // go to low end first
-        for (int i = index - 1; i >= 0; i--) { // down
-            totalMove += abs(RQ[i] - initial); // add
-            initial = RQ[i]; // move
-            printf(" -> %d", initial); // print
-        }
-        totalMove += abs(0 - initial); // to zero
-        initial = 0; // set to zero
-        printf(" -> %d", initial); // print
-        for (int i = index; i < n; i++) { // then up
-            totalMove += abs(RQ[i] - initial); // add
-            initial = RQ[i]; // move
-            printf(" -> %d", initial); // print
-        }
-    }
-    printf("\nTotal head movement is %d\n", totalMove); // total
+    printf("\nTotal Head Movement = %d\n", total);
 }
 
-void CLOOK() { // circular look
-    int n, initial, move, totalMove = 0; // inputs and total
-    printf("\n--- C-LOOK Disk Scheduling Algorithm ---\nEnter the number of Requests: "); // prompt
-    scanf("%d", &n); // read count
-    
-    int RQ[n]; // requests
-    printf("Enter the Requests sequence:\n"); // prompt
-    for (int i = 0; i < n; i++) // read loop
-        scanf("%d", &RQ[i]); // read
-    
-    printf("Enter initial head position: "); // prompt
-    scanf("%d", &initial); // read
-    printf("Enter the head movement direction (1 for high, 0 for low): "); // prompt
-    scanf("%d", &move); // read
-    
-    qsort(RQ, n, sizeof(int), compare); // sort
+void CLOOK() {
+    int n, head, dir, total=0;
+    printf("Enter no. of requests: "); scanf("%d",&n);
+    int rq[n];
+    printf("Enter requests: ");
+    for(int i=0;i<n;i++) scanf("%d",&rq[i]);
+    printf("Enter initial head: "); scanf("%d",&head);
+    printf("Direction (1=right, 0=left): "); scanf("%d",&dir);
 
-    int index = 0; // split point
-    for (int i = 0; i < n; i++) {
-        if (initial < RQ[i]) { // first higher
-            index = i; // set
-            break; // stop
-        }
+    qsort(rq,n,sizeof(int),compare);
+    int i; for(i=0;i<n;i++) if(rq[i]>head) break;
+
+    if(dir){
+        for(int j=i;j<n;j++){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
+        for(int j=0;j<i;j++){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
+    } else {
+        for(int j=i-1;j>=0;j--){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
+        for(int j=n-1;j>=i;j--){ total+=abs(rq[j]-head); head=rq[j]; printf("%d ",head); }
     }
-
-    printf("\nSeek Sequence: %d", initial); // start
-
-    if (move == 1) { // move high direction
-        for (int i = index; i < n; i++) { // up
-            totalMove += abs(RQ[i] - initial); // add
-            initial = RQ[i]; // move
-            printf(" -> %d", initial); // print
-        }
-        for (int i = 0; i < index; i++) { // jump to lowest and continue
-            totalMove += abs(RQ[i] - initial); // add
-            initial = RQ[i]; // move
-            printf(" -> %d", initial); // print
-        }
-    } else { // move low direction
-        for (int i = index - 1; i >= 0; i--) { // down
-            totalMove += abs(RQ[i] - initial); // add
-            initial = RQ[i]; // move
-            printf(" -> %d", initial); // print
-        }
-        for (int i = n - 1; i >= index; i--) { // jump to highest and continue
-            totalMove += abs(RQ[i] - initial); // add
-            initial = RQ[i]; // move
-            printf(" -> %d", initial); // print
-        }
-    }
-    printf("\nTotal head movement is %d\n", totalMove); // total
+    printf("\nTotal Head Movement = %d\n", total);
 }
 
-int main() { // main menu
-    int ch; // choice
-    do { // loop
-        printf("\n\n*********** MENU ***********\n1: SSTF\n2: SCAN\n3: C-LOOK\n4: EXIT\nEnter your choice: "); // menu
-        scanf("%d", &ch); // read choice
-        switch (ch) { // handle
-            case 1: SSTF(); break; // run SSTF
-            case 2: SCAN(); break; // run SCAN
-            case 3: CLOOK(); break; // run C-LOOK
-            case 4: exit(0); // exit
-            default: printf("\nInvalid choice! Please try again.\n"); // bad
-        }
-    } while (ch != 4); // until exit
-    return 0; // ok
+int main() {
+    int ch;
+    while(1){
+        printf("\n1:SSTF  2:SCAN  3:C-LOOK  4:Exit\nEnter choice: ");
+        scanf("%d",&ch);
+        if(ch==1) SSTF();
+        else if(ch==2) SCAN();
+        else if(ch==3) CLOOK();
+        else break;
+    }
 }
-

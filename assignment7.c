@@ -1,67 +1,67 @@
 // assignment7.c
 // Problem Statement 7:
 // Implement the C program for Deadlock Avoidance Algorithm: Banker's Algorithm.
-#include <stdio.h> // io
-#include <stdlib.h> // std
+#include <stdio.h>
 
-int main() { // banker
-    int n, m; // n processes, m resources
-    printf("Enter processes (n) and resource types (m): "); // prompt
-    scanf("%d %d", &n, &m); // read
-    if (n <= 0 || m <= 0) return 1; // guard
+int main() {
+    int n, m;
+    printf("Enter number of processes (n) and resource types (m): ");
+    scanf("%d %d", &n, &m);
 
-    int alloc[n][m], max[n][m], need[n][m]; // matrices
-    int avail[m]; // available
+    int alloc[n][m], max[n][m], need[n][m], avail[m];
 
-    printf("Enter Allocation matrix (n x m):\n"); // prompt
-    for (int i = 0; i < n; i++) // rows
-        for (int j = 0; j < m; j++) // cols
-            scanf("%d", &alloc[i][j]); // read
-
-    printf("Enter Max matrix (n x m):\n"); // prompt
-    for (int i = 0; i < n; i++) // rows
-        for (int j = 0; j < m; j++) // cols
-            scanf("%d", &max[i][j]); // read
-
-    printf("Enter Available vector (m): "); // prompt
-    for (int j = 0; j < m; j++) // read m
-        scanf("%d", &avail[j]); // read
-
-    // --- This is the "Magic" ---
-    for (int i = 0; i < n; i++) // compute need
+    printf("\nEnter Allocation matrix:\n");
+    for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
-            need[i][j] = max[i][j] - alloc[i][j]; // need = max - alloc
+            scanf("%d", &alloc[i][j]);
 
-    int finished[n]; // finish flags
-    for (int i = 0; i < n; i++) finished[i] = 0; // init
-    int safeSeq[n], idx = 0; // sequence
+    printf("\nEnter Max matrix:\n");
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
+            scanf("%d", &max[i][j]);
 
-    int madeProgress = 1; // loop flag
-    while (idx < n && madeProgress) { // try to find order
-        madeProgress = 0; // reset
-        for (int i = 0; i < n; i++) { // try each process
-            if (finished[i]) continue; // skip done
-            int canRun = 1; // assume ok
-            for (int j = 0; j < m; j++) // check need <= avail
-                if (need[i][j] > avail[j]) { canRun = 0; break; } // not ok
-            
-            if (canRun) { // can run now
-                for (int j = 0; j < m; j++) // release resources
-                    avail[j] += alloc[i][j]; // add back
-                safeSeq[idx++] = i; // record
-                finished[i] = 1; // mark
-                madeProgress = 1; // progress
+    printf("\nEnter Available resources:\n");
+    for (int j = 0; j < m; j++)
+        scanf("%d", &avail[j]);
+
+    // Calculate Need matrix
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
+            need[i][j] = max[i][j] - alloc[i][j];
+
+    int finished[n], safeSeq[n], count = 0;
+    for (int i = 0; i < n; i++) finished[i] = 0;
+
+    while (count < n) {
+        int found = 0;
+        for (int i = 0; i < n; i++) {
+            if (!finished[i]) {
+                int canRun = 1;
+                for (int j = 0; j < m; j++)
+                    if (need[i][j] > avail[j]) {
+                        canRun = 0;
+                        break;
+                    }
+                if (canRun) {
+                    for (int j = 0; j < m; j++)
+                        avail[j] += alloc[i][j];
+                    safeSeq[count++] = i;
+                    finished[i] = 1;
+                    found = 1;
+                }
             }
         }
+        if (!found) break;
     }
-    // --- End of "Magic" ---
 
-    if (idx == n) { // safe
-        printf("Safe sequence: "); // print
-        for (int i = 0; i < n; i++) printf("P%d ", safeSeq[i]); // P indices
-        printf("\n"); // newline
-    } else { // unsafe
-        printf("No safe sequence (system is in unsafe state)\n"); // info
+    if (count == n) {
+        printf("\n Safe Sequence: ");
+        for (int i = 0; i < n; i++)
+            printf("P%d ", safeSeq[i]);
+        printf("\n");
+    } else {
+        printf("\n❌ No Safe Sequence (System is Unsafe)\n");
     }
-    return 0; // ok
+
+    return 0;
 }
