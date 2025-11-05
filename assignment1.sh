@@ -1,4 +1,6 @@
-#!/bin/bash # use bash shell
+#!/bin/bash
+
+# use bash shell
 # Problem Statement 1:
 # Write a program to implement an address book with options:
 # a) Create address book
@@ -8,45 +10,53 @@
 # e) Modify a record
 # f) Exit
 
-fileName="addressbook.txt" # data file name
-opt=0 # menu option variable
 
-# add one address record (Part B)
-addRecord() {
-    echo -n "Enter Name: " # ask name
-    read name # read name
-    echo -n "Enter Phone Number of $name: " # ask phone
-    read number # read phone
-    echo -n "Enter Address of $name: " # ask address
-    read address # read address
-    echo -e "$name\t$number\t\t$address" >> "$fileName" # append to file
+file="addressbook.txt"
+
+add_record() {
+    echo -n "Name: "; read name
+    echo -n "Phone: "; read phone
+    echo -n "Address: "; read addr
+    echo -e "$name\t$phone\t$addr" >> "$file"
 }
 
-# loop menu until Exit
-while [ "$opt" -ne 6 ]; do
-    echo -e "\n--- Address Book ---" # title
-    echo "1. Create New Address Book (erases old)" # create
-    echo "2. View Address Book" # view
-    echo "3. Insert a Record" # insert
-    echo "4. Delete a Record" # delete
-    echo "5. Modify a Record" # modify
-    echo "6. Exit" # exit
-    echo -n "Enter your choice: " # ask choice
-    read opt # read choice
+while true; do
+    echo -e "\n--- Address Book ---"
+    echo "1) Create New Address Book"
+    echo "2) View Address Book"
+    echo "3) Insert Record"
+    echo "4) Delete Record"
+    echo "5) Modify Record"
+    echo "6) Exit"
+    echo -n "Enter choice: "
+    read ch
 
-    case $opt in
-     
-        1) echo -e "NAME\tNUMBER\t\tADDRESS" > "$fileName"; echo "Created $fileName" ;; # create
+    case $ch in
+        1) echo -e "NAME\tPHONE\tADDRESS" > "$file"
+           echo "Address Book Created." ;;
 
-        2) if [ -e "$fileName" ]; then cat "$fileName"; else echo "No file. Use option 1."; fi ;; # view
+        2) [ -e "$file" ] && cat "$file" || echo "No address book found." ;;
 
-        3) if [ -e "$fileName" ]; then addRecord; else echo "No file. Use option 1."; fi ;; # insert
+        3) [ -e "$file" ] && add_record || echo "Create address book first." ;;
 
-        4) if [ -e "$fileName" ]; then echo -n "Enter Name/Number to delete: "; read k; sed -i "/$k/d" "$fileName"; echo "Deleted (if matched)."; else echo "No file. Use option 1."; fi ;; # delete
+        4) if [ -e "$file" ]; then
+               echo -n "Enter Name/Phone to delete: "; read key
+               sed -i "/$key/d" "$file"
+               echo "Record deleted (if existed)."
+           else echo "Create address book first."
+           fi ;;
 
-        5) if [ -e "$fileName" ]; then echo -n "Enter Name/Number to modify: "; read k; sed -i "/$k/d" "$fileName"; echo "Enter new details:"; addRecord; echo "Modified."; else echo "No file. Use option 1."; fi ;; # modify
-        
-        6) echo "Exiting." ;; # exit
-        *) echo "Invalid choice." ;; # default
+        5) if [ -e "$file" ]; then
+               echo -n "Enter Name/Phone to modify: "; read key
+               sed -i "/$key/d" "$file"
+               echo "Enter new details:"
+               add_record
+               echo "Record modified."
+           else echo "Create address book first."
+           fi ;;
+
+        6) echo "Goodbye!"; exit ;;
+
+        *) echo "Invalid choice." ;;
     esac
 done

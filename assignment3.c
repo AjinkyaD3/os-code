@@ -9,28 +9,34 @@ array in reverse order.
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 int main(int argc, char *argv[]) {
-    // Case 2: Child executed via execve → print array reverse
+
+    // --------- CASE 2: Program called AGAIN via execve (child role) ---------
+    // argc > 1 means array elements were passed as command-line arguments
     if(argc > 1) {
-        printf("Child (after execve) prints array in reverse:\n");
+        printf("\nChild Process (After execve) - Printing Array in Reverse:\n");
+
+        // Print elements in reverse order
         for(int i = argc - 1; i > 0; i--)
             printf("%s ", argv[i]);
+
         printf("\n");
-        return 0;
+        return 0;   // Child done
     }
 
-    // Case 1: Original parent process
+    // --------- CASE 1: MAIN PROGRAM (Parent role) ---------
     int n;
     printf("Enter size of array: ");
     scanf("%d", &n);
 
     int arr[n];
-    printf("Enter elements: ");
+    printf("Enter %d elements: ", n);
     for(int i = 0; i < n; i++)
         scanf("%d", &arr[i]);
 
-    // Sort the array
+    // Sort the array (simple ascending)
     for(int i = 0; i < n; i++)
         for(int j = i+1; j < n; j++)
             if(arr[i] > arr[j]) {
@@ -39,23 +45,27 @@ int main(int argc, char *argv[]) {
                 arr[j] = t;
             }
 
+    // Create child process
     pid_t pid = fork();
 
-    if(pid == 0) {  // Child
-        // Convert sorted array to string arguments
+    if(pid == 0) {  // Child Process
+        // Convert sorted integers to strings for execve
         char *args[n+2];
-        args[0] = argv[0];
+        args[0] = argv[0];  // program name
+
         for(int i = 0; i < n; i++) {
             args[i+1] = malloc(10);
             sprintf(args[i+1], "%d", arr[i]);
         }
-        args[n+1] = NULL;
+        args[n+1] = NULL;  // end of argument list
 
+        // Replace child with same program --> now argc > 1 so child prints reverse
         execve(argv[0], args, NULL);
-        perror("execve failed");
+
+        perror("execve failed"); // executes only if execve fails
     }
-    else { // Parent
-        wait(NULL);
+    else { // Parent Process
+        wait(NULL); // Parent waits for child
     }
 
     return 0;

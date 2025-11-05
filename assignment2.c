@@ -1,93 +1,87 @@
+
 /*
 Problem Statement 2:
 Implement the C program in which main program accepts the integers to be sorted.
 Main program uses FORK to create a child process. Parent sorts and waits for child
 using WAIT; child also sorts using any algorithm. Also demonstrate zombie and orphan states.
 */
-// include standard input/output
+
 #include <stdio.h>
-// include standard library (for exit)
-#include <stdlib.h>
-// include POSIX for fork, getpid, sleep
 #include <unistd.h>
-// include wait for wait, waitpid
 #include <sys/wait.h>
+#include <stdlib.h>
 
-// simple bubble sort function
-void bubbleSort(int arr[], int n) {
-    for (int i = 0; i < n - 1; i++) { // loop n-1 times
-        for (int j = 0; j < n - i - 1; j++) { // inner loop
-            if (arr[j] > arr[j + 1]) { // compare adjacent
-                int temp = arr[j]; // swap start
-                arr[j] = arr[j + 1];
-                arr[j + 1] = temp; // swap end
+void bubbleSort(int a[], int n) {
+    for(int i = 0; i < n-1; i++)
+        for(int j = 0; j < n-i-1; j++)
+            if(a[j] > a[j+1]) {
+                int t = a[j];
+                a[j] = a[j+1];
+                a[j+1] = t;
             }
-        }
-    }
-}
-
-// print array with a small label
-void printArray(int arr[], int n, char *label) {
-    printf("%s", label); // print label
-    for (int i = 0; i < n; i++) // loop over array
-        printf("%d ", arr[i]); // print value
-    printf("\n"); // new line
 }
 
 int main() {
-    int n; // number of elements
-    printf("Enter count: "); // ask for count
-    scanf("%d", &n); // read count
+    int n;
+    printf("Enter number of elements: ");
+    scanf("%d", &n);
 
-    int arr[n]; // input array (VLA for simplicity)
-    printf("Enter %d integers: ", n); // ask for numbers
-    for (int i = 0; i < n; i++) // read loop
-        scanf("%d", &arr[i]); // read value
+    int arr[n];
+    printf("Enter %d elements: ", n);
+    for(int i = 0; i < n; i++)
+        scanf("%d", &arr[i]);
 
-    pid_t pid = fork(); // create child for sorting
+    pid_t pid = fork();
 
-    if (pid < 0) { // fork error
-        printf("fork failed\n"); // print error
-        return 1; // exit with error
-    } else if (pid == 0) { // child process
-        printf("[child] pid=%d sorting...\n", getpid()); // child info
+    if(pid == 0) {
+        // Child Process
+        printf("\n[Child] PID = %d\n", getpid());
+        bubbleSort(arr, n);
 
-        bubbleSort(arr, n); // child sorts
+        printf("[Child] Sorted Array: ");
+        for(int i = 0; i < n; i++) printf("%d ", arr[i]);
+        printf("\n");
+        exit(0);
+    }
+    else {
+        // Parent Process
+        printf("\n[Parent] PID = %d\n", getpid());
+        bubbleSort(arr, n);
 
-        printArray(arr, n, "[child] sorted: "); // show child result
+        printf("[Parent] Sorted Array: ");
+        for(int i = 0; i < n; i++) printf("%d ", arr[i]);
+        printf("\n");
 
-        printf("[child] done\n"); // child done
-        
-        exit(0); // child exit
-    } else { // parent process
-        printf("[parent] pid=%d sorting its copy...\n", getpid()); // parent info
-        bubbleSort(arr, n); // parent sorts
-        printf("[parent] waiting for child...\n"); // wait info
-        wait(NULL); // wait for child
-        printArray(arr, n, "[parent] sorted: "); // show parent result
+        wait(NULL); // prevents zombie
+        printf("[Parent] Child finished. No Zombie in sorting part.\n");
     }
 
-    // --- Demonstrate ZOMBIE state ---
-    pid_t z = fork(); // make a short-lived child
-    if (z == 0) { // zombie child
-        printf("[z-child] pid=%d exiting now (becomes zombie until reaped)\n", getpid()); // info
-        exit(0); // exit immediately -> zombie until parent waits
-    } else { // parent side
-        printf("[parent] created z-child pid=%d, sleeping 3s to let zombie exist...\n", z); // info
-        sleep(3); // give time to observe zombie in ps
-        waitpid(z, NULL, 0); // reap zombie
-        printf("[parent] reaped z-child (zombie cleared)\n"); // done
+    // ---------------- DEMONSTRATE ZOMBIE ----------------
+    pid_t z = fork();
+
+    if(z == 0) {
+        printf("\n[Zombie-Child] PID = %d exiting now.\n", getpid());
+        exit(0);  // Child exits → parent doesn't wait immediately → zombie
+    }
+    else {
+        printf("[Parent] Created zombie child PID = %d. Sleeping 5 seconds...\n", z);
+        printf(">>> Check zombie using: ps -l\n");
+        sleep(5); // zombie exists here
+        waitpid(z, NULL, 0); // removes zombie
+        printf("[Parent] Zombie cleared.\n");
     }
 
-    // --- Demonstrate ORPHAN state ---
-    pid_t o = fork(); // make a child that outlives parent
-    if (o == 0) { // orphan child
-        printf("[o-child] pid=%d sleeping 3s, parent will exit -> I become orphan\n", getpid()); // info
-        sleep(3); // wait for parent to exit
-        printf("[o-child] now my ppid=%d (adopted by init)\n", getppid()); // show new parent
-        exit(0); // exit
-    } else { // parent will not wait here
-        printf("[parent] exiting now to create orphan (child pid=%d)\n", o); // info
-        return 0; // parent exits, child continues as orphan
+    // ---------------- DEMONSTRATE ORPHAN ----------------
+    pid_t o = fork();
+
+    if(o == 0) {
+        printf("\n[Orphan-Child] PID = %d sleeping 5 seconds.\n", getpid());
+        sleep(5); // parent will exit while child is sleeping
+        printf("[Orphan-Child] Now my new PPID = %d (adopted by init)\n", getppid());
+        exit(0);
+    }
+    else {
+        printf("[Parent] Exiting now. Orphan child PID = %d will continue.\n", o);
+        exit(0); // parent exits → orphan created
     }
 }
