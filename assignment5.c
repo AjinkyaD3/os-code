@@ -8,63 +8,51 @@ producer-consumer problem with counting semaphores and mutex.
 #include <semaphore.h>
 #include <unistd.h>
 
-#define BUF 5        // Buffer size
-#define NITEMS 10    // Number of items to produce/consume
+#define N 5     // buffer size
+int buf[N], in=0, out=0;
 
-int buffer[BUF];
-int in = 0, out = 0;
+sem_t empty, full;
+pthread_mutex_t m;
 
-sem_t emptySlots, filledSlots;
-pthread_mutex_t lock;
+void* producer(){
+  for(int x=1;x<=10;x++){
+    sem_wait(&empty);
+    pthread_mutex_lock(&m);
 
-void *producer(void *arg) {
-    for(int i = 1; i <= NITEMS; i++) {
-        sem_wait(&emptySlots);            // Wait for empty slot
-        pthread_mutex_lock(&lock);        // Lock buffer
+    buf[in]=x;
+    printf("P → %d\n", x);
+    in=(in+1)%N;
 
-        buffer[in] = i;
-        printf("Producer produced %d at index %d\n", i, in);
-        in = (in + 1) % BUF;
-
-        pthread_mutex_unlock(&lock);      // Unlock buffer
-        sem_post(&filledSlots);           // Signal consumer
-        usleep(100000);
-    }
-    return NULL;
+    pthread_mutex_unlock(&m);
+    sem_post(&full);
+    usleep(80000);
+  }
 }
 
-void *consumer(void *arg) {
-    for(int i = 1; i <= NITEMS; i++) {
-        sem_wait(&filledSlots);           // Wait for available item
-        pthread_mutex_lock(&lock);        // Lock buffer
+void* consumer(){
+  for(int i=1;i<=10;i++){
+    sem_wait(&full);
+    pthread_mutex_lock(&m);
 
-        int x = buffer[out];
-        printf("Consumer consumed %d from index %d\n", x, out);
-        out = (out + 1) % BUF;
+    int x=buf[out];
+    printf("C ← %d\n", x);
+    out=(out+1)%N;
 
-        pthread_mutex_unlock(&lock);      // Unlock buffer
-        sem_post(&emptySlots);            // Signal producer
-        usleep(150000);
-    }
-    return NULL;
+    pthread_mutex_unlock(&m);
+    sem_post(&empty);
+    usleep(90000);
+  }
 }
 
-int main() {
-    pthread_t prod, cons;
+int main(){
+  pthread_t p,c;
+  sem_init(&empty,0,N);
+  sem_init(&full,0,0);
+  pthread_mutex_init(&m,NULL);
 
-    sem_init(&emptySlots, 0, BUF);
-    sem_init(&filledSlots, 0, 0);
-    pthread_mutex_init(&lock, NULL);
-
-    pthread_create(&prod, NULL, producer, NULL);
-    pthread_create(&cons, NULL, consumer, NULL);
-
-    pthread_join(prod, NULL);
-    pthread_join(cons, NULL);
-
-    sem_destroy(&emptySlots);
-    sem_destroy(&filledSlots);
-    pthread_mutex_destroy(&lock);
-
-    return 0;
+  pthread_create(&p,NULL,producer,NULL);
+  pthread_create(&c,NULL,consumer,NULL);
+  pthread_join(p,NULL);
+  pthread_join(c,NULL);
+  return 0;
 }
