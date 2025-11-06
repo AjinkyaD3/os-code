@@ -1,6 +1,3 @@
-// assignment7.c
-// Problem Statement 7:
-// Implement the C program for Deadlock Avoidance Algorithm: Banker's Algorithm.
 #include <stdio.h>
 
 int main() {

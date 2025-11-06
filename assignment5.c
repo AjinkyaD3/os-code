@@ -1,14 +1,9 @@
-/*
-Problem Statement 5:
-Thread synchronization using counting semaphores. Application to demonstrate
-producer-consumer problem with counting semaphores and mutex.
-*/
 #include <stdio.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
 
-#define N 5     // buffer size
+#define N 5
 int buf[N], in=0, out=0;
 
 sem_t empty, full;

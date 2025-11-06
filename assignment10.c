@@ -1,8 +1,3 @@
-/*
-Problem Statement 10:
-Implement the C program for Disk Scheduling Algorithms: SSTF, SCAN, and C-LOOK
-considering the initial head position moving away from the spindle.
-*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

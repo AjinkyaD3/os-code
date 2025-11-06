@@ -1,23 +1,20 @@
 #!/bin/bash
 
-# use bash shell
-# Problem Statement 1:
-# Write a program to implement an address book with options:
-# a) Create address book
-# b) View address book
-# c) Insert a record
-# d) Delete a record
-# e) Modify a record
-# f) Exit
-
-
 file="addressbook.txt"
 
 add_record() {
     echo -n "Name: "; read name
     echo -n "Phone: "; read phone
+
+    
+    grep -qw "$phone" "$file" 2>/dev/null && { 
+        echo "Error: Phone number already exists. Record not added."
+        return
+    }
+
     echo -n "Address: "; read addr
     echo -e "$name\t$phone\t$addr" >> "$file"
+    echo "Record added."
 }
 
 while true; do
