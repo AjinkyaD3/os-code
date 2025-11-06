@@ -12,7 +12,8 @@ int main(int c,char *v[]){
         printf("[Server] enter message: ");
         fgets(p,1024,stdin);
         getchar();
-        shmdt(p); shmctl(id,IPC_RMID,0);
+        shmdt(p); 
+        shmctl(id,IPC_RMID,0);
     } 
     else if(c>1 && !strcmp(v[1],"--client")){
         puts(p);

@@ -7,56 +7,68 @@ considering the initial head position moving away from the spindle.
 #include <stdlib.h>
 #include <math.h>
 
-int cmp(const void *a,const void *b){ return (*(int*)a - *(int*)b); }
+int cmp(const void *a,const void *b){ return *(int*)a - *(int*)b; }
 
 void SSTF(){
-    int n,h; printf("n: "); scanf("%d",&n);
-    int r[n],v[n],t=0; for(int i=0;i<n;i++){scanf("%d",&r[i]);v[i]=0;}
-    printf("head: "); scanf("%d",&h);
+    int n,head;
+    scanf("%d",&n);
+    int req[n], done[n], total=0;
+    for(int i=0;i<n;i++){ scanf("%d",&req[i]); done[i]=0; }
+    scanf("%d",&head);
+
     for(int k=0;k<n;k++){
-        int min=9999,idx=-1;
+        int best=-1, dist=1e9;
         for(int i=0;i<n;i++)
-            if(!v[i] && abs(r[i]-h)<min){ min=abs(r[i]-h); idx=i; }
-        t+=min; h=r[idx]; v[idx]=1; printf("%d ",h);
+            if(!done[i] && abs(req[i]-head)<dist)
+                dist=abs(req[i]-head), best=i;
+        total+=dist; head=req[best]; done[best]=1;
+        printf("%d ", head);
     }
-    printf("\nMove=%d\n",t);
+    printf("\nMove=%d\n", total);
 }
 
 void SCAN(){
-    int n,h,s,d,t=0; printf("n: "); scanf("%d",&n);
-    int r[n]; for(int i=0;i<n;i++) scanf("%d",&r[i]);
-    printf("head: "); scanf("%d",&h);
-    printf("size: "); scanf("%d",&s);
-    printf("dir(1→): "); scanf("%d",&d);
-    qsort(r,n,sizeof(int),cmp);
-    int i=0; while(i<n && r[i]<h) i++;
-    if(d){
-        for(int j=i;j<n;j++){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
-        t+=abs(s-1-h); h=s-1;
-        for(int j=i-1;j>=0;j--){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
-    }else{
-        for(int j=i-1;j>=0;j--){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
-        t+=abs(h-0); h=0;
-        for(int j=i;j<n;j++){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
+    int n,head,size,dir, total=0;
+    scanf("%d",&n);
+    int req[n];
+    for(int i=0;i<n;i++) scanf("%d",&req[i]);
+    scanf("%d%d%d",&head,&size,&dir);
+
+    qsort(req,n,sizeof(int),cmp);
+    int pos=0; while(pos<n && req[pos]<head) pos++;
+
+    if(dir==1){
+        for(int i=pos;i<n;i++) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
+        total+=abs((size-1)-head); head=size-1;
+        for(int i=pos-1;i>=0;i--) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
     }
-    printf("\nMove=%d\n",t);
+    else{
+        for(int i=pos-1;i>=0;i--) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
+        total+=abs(head-0); head=0;
+        for(int i=pos;i<n;i++) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
+    }
+    printf("\nMove=%d\n", total);
 }
 
 void CLOOK(){
-    int n,h,d,t=0; printf("n: "); scanf("%d",&n);
-    int r[n]; for(int i=0;i<n;i++) scanf("%d",&r[i]);
-    printf("head: "); scanf("%d",&h);
-    printf("dir(1→): "); scanf("%d",&d);
-    qsort(r,n,sizeof(int),cmp);
-    int i=0; while(i<n && r[i]<h) i++;
-    if(d){
-        for(int j=i;j<n;j++){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
-        for(int j=0;j<i;j++){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
-    }else{
-        for(int j=i-1;j>=0;j--){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
-        for(int j=n-1;j>=i;j--){ t+=abs(r[j]-h); h=r[j]; printf("%d ",h); }
+    int n,head,dir,total=0;
+    scanf("%d",&n);
+    int req[n];
+    for(int i=0;i<n;i++) scanf("%d",&req[i]);
+    scanf("%d%d",&head,&dir);
+
+    qsort(req,n,sizeof(int),cmp);
+    int pos=0; while(pos<n && req[pos]<head) pos++;
+
+    if(dir==1){
+        for(int i=pos;i<n;i++) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
+        for(int i=0;i<pos;i++) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
     }
-    printf("\nMove=%d\n",t);
+    else{
+        for(int i=pos-1;i>=0;i--) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
+        for(int i=n-1;i>=pos;i--) total+=abs(req[i]-head), head=req[i], printf("%d ",head);
+    }
+    printf("\nMove=%d\n", total);
 }
 
 int main(){
@@ -67,6 +79,6 @@ int main(){
         if(ch==1) SSTF();
         else if(ch==2) SCAN();
         else if(ch==3) CLOOK();
-        else break;
+        else return 0;
     }
 }

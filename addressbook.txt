@@ -1,2 +1,0 @@
-NAME	PHONE	ADDRESS
-ajinkya	9112975900	pune
