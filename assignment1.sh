@@ -5,7 +5,6 @@ file="addressbook.txt"
 add_record() {
     echo -n "Name: "; read name
     echo -n "Phone: "; read phone
-
     
     grep -qw "$phone" "$file" 2>/dev/null && { 
         echo "Error: Phone number already exists. Record not added."
